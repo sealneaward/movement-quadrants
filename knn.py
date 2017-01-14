@@ -1,8 +1,6 @@
 import pandas as pd
 import numpy as np
 
-from sklearn.svm import LinearSVC
-from sklearn.mixture import GaussianMixture
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
@@ -29,12 +27,13 @@ def pol2cart(row):
     row = [x,y]
     return row
 
-#######################################
-# Individual shot plot function
-#######################################
-def plot_shot(x,y,quadrant, event_id):
+
+#####################################################################
+# Plot Shot Chart:http://savvastjortjoglou.com/nba-shot-sharts.html
+#####################################################################
+def plot_shot(data):
     plt.figure(figsize=(12,11))
-    plt.scatter(x, y, c=['red'], s=30)
+    plt.scatter(data.LOC_X, data.LOC_Y, c=data.SHOT_ZONE_BASIC, s=30)
     draw_court()
     # Adjust plot limits to just fit in half court
     plt.xlim(-250,250)
@@ -42,8 +41,8 @@ def plot_shot(x,y,quadrant, event_id):
     # in order to place the hoop by the top of plot
     plt.ylim(422.5, -47.5)
     # get rid of axis tick labels
-    plt.tick_params(labelbottom=False, labelleft=False)
-    plt.savefig('./data/img/'+str(quadrant)+'/'+str(event_id)+'.jpg')
+    # plt.tick_params(labelbottom=False, labelleft=False)
+    plt.savefig('./data/img/half/fully_converted_with_zones.jpg')
     plt.close()
 
 ###########################################################################
@@ -126,7 +125,7 @@ data['SHOT_ZONE_BASIC'] = data['SHOT_ZONE_BASIC'].map(dictionary)
 data = data.dropna(subset = ['LOC_X','LOC_Y','SHOT_ZONE_BASIC'])
 data['SHOT_ZONE_BASIC'] = data['SHOT_ZONE_BASIC'].astype(int)
 data = data.drop_duplicates(subset=['GAME_EVENT_ID','GAME_ID'], inplace=False)
-data[['LOC_RHO','LOC_PHI']] = data[['LOC_X','LOC_Y']].apply(cart2pol, axis=1)
+# data[['LOC_RHO','LOC_PHI']] = data[['LOC_X','LOC_Y']].apply(cart2pol, axis=1)
 
 events = data['GAME_EVENT_ID'].values
 
@@ -139,35 +138,38 @@ X = data[['LOC_X','LOC_Y']]
 Y = data[['SHOT_ZONE_BASIC']]
 train_x, test_x, train_y, test_y = train_test_split(X, Y, test_size=0.5, random_state=0123)
 
-###########################################
-# Train, Predict, Evaluate
-###########################################
-print 'X shape: ' + str(train_x.shape)
-print 'Y shape: ' + str(train_y.shape)
-
-# svm = LinearSVC()
-# svm.fit(train_x, train_y)
-# predictions = svm.predict(test_x)
-
-# gmm = GaussianMixture(n_components=5)
-# gmm.fit(train_x, train_y)
-# predictions = gmm.predict(test_x)
-
+####################################################################################
+# Train, Predict, Evaluate TODO: Serialize the classifier so code is more efficient
+####################################################################################
 knn = KNeighborsClassifier(n_neighbors=5)
 knn.fit(train_x, train_y)
 predictions = knn.predict(test_x)
 
-print str(classification_report(test_y, predictions, digits=4))
+# KNN is 99.56% accurate
+# print str(classification_report(test_y, predictions, digits=4))
 
-#####################################################################
-# Plot Shot Chart:http://savvastjortjoglou.com/nba-shot-sharts.html
-#####################################################################
-# for event in events:
-#     event_data = data[data['GAME_EVENT_ID'] == event]
-#     x = event_data['LOC_X'].values[0]
-#     y = event_data['LOC_Y'].values[0]
-#     quadrant = event_data['SHOT_ZONE_BASIC'].values[0]
-#
-#     plot_shot(x,y,quadrant,event)
+######################################################################
+# Use KNN Model to label full converted movement set
+######################################################################
+# read data and rename columns
+data = pd.read_csv('./data/converted/0021500139.csv')
+data[['LOC_X','LOC_Y']] = data[['x_loc','y_loc']]
 
-# TODO: Add method to label movement data
+# predict and label shot zones
+X = data[['LOC_X','LOC_Y']]
+zones = knn.predict(X)
+data['SHOT_ZONE_BASIC'] = zones
+plot_shot(data)
+
+# map real labels
+data['zone_basic'] = data['SHOT_ZONE_BASIC']
+dictionary = {1:'Restricted Area', 2:'In The Paint (Non-RA)', 3:'Mid-Range', 4:'Right Corner 3', 5:'Left Corner 3', 6:'Above the Break 3'}
+data['zone_basic'] = data['zone_basic'].map(dictionary)
+
+# get rid of excess data
+data = data.drop('LOC_X', axis=1, inplace=False)
+data = data.drop('LOC_Y', axis=1, inplace=False)
+data = data.drop('SHOT_ZONE_BASIC', axis=1, inplace=False)
+
+# write to labelled folder
+data.to_csv('./data/label/0021500139.csv', index=False)
