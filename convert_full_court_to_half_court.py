@@ -229,7 +229,7 @@ def convert(file_name):
     data = full_to_half_full(data)
     data = half_full_to_half(data)
     # save data as converted
-    data.to_csv('./data/converted/0021500139.csv',index=False)
+    data.to_csv('./data/converted/'+filename,index=False)
 
 # DEMO of plotting functions to demonstrate the conversion process
 data = pd.read_csv('./data/no_label/0021500139.csv')

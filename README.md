@@ -34,3 +34,4 @@ This classifier has an extremely high accuracy and can be used to further zone a
 
 ### TODO
 - Package this repository so that all it takes in are file names in the movement folders **no_label, converted, and label**
+- Instead of leaving the converted positions, leave the old x,y positions from original data so that it can be converted back to original form, but with the zone labels
