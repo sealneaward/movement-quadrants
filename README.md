@@ -23,11 +23,22 @@ This classifier has an extremely high accuracy and can be used to further zone a
 
 - This is the original labelled data set with all basic shot zones identified
 
-![Kobe Shot Selection](./data/img/half/kobe_shots.jpg)
+![Kobe Shot Selection](./data/img/half/kobe_shots_zones.jpg)
 
 - Using the movement that has been converted into the shot log format, the KNN classifier can correctly label the zones that a player is moving in.
 
 ![Fully Converted and Labelled](./data/img/half/fully_converted_with_zones.jpg)
+
+### Using Multiple Ranges
+- Depending on how you setup your dictionaries and the column mappings, you can create labels for data that combine multiple ranges into a list of new ranges.
+
+- Here is the training set of Kobe's shots in ranges, as well as floor direction (Left, Right, Center, Left Center, Right Center)
+
+![Training Multiple Ranges](./data/img/half/kobe_shots_range_area.jpg)
+
+- The classifier can again be applied to label data with the new ranges.
+
+![Labelling Multiple Ranges](./data/img/half/fully_converted_with_range_areas.jpg)
 
 ### Acknowledgements
 - A large part of the plotting was done using [Savvas Tjortjoglou' s](https://github.com/savvastj) tutorials found [here](http://savvastjortjoglou.com/)
