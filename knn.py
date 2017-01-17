@@ -33,7 +33,7 @@ def pol2cart(row):
 #####################################################################
 def plot_shot(data):
     plt.figure(figsize=(12,11))
-    plt.scatter(data.LOC_X, data.LOC_Y, c=data.SHOT_ZONE_BASIC, s=30)
+    plt.scatter(data.LOC_X, data.LOC_Y, c=data.shot_zone_range_area, s=30)
     draw_court()
     # Adjust plot limits to just fit in half court
     plt.xlim(-250,250)
@@ -42,7 +42,7 @@ def plot_shot(data):
     plt.ylim(422.5, -47.5)
     # get rid of axis tick labels
     # plt.tick_params(labelbottom=False, labelleft=False)
-    plt.savefig('./data/img/half/fully_converted_with_zones.jpg')
+    plt.savefig('./data/img/half/fully_converted_with_range_areas.jpg')
     plt.close()
 
 ###########################################################################
@@ -116,60 +116,100 @@ def draw_court(ax=None, color='black', lw=2, outer_lines=False):
 
     return ax
 
-###########################################
-# Load data and map location categories
-###########################################
-dictionary = {'Restricted Area':1, 'In The Paint (Non-RA)':2, 'Mid-Range':3, 'Right Corner 3':4, 'Left Corner 3':5, 'Above the Break 3':6}
-data = pd.read_csv('./data/train/data.csv')
-data['SHOT_ZONE_BASIC'] = data['SHOT_ZONE_BASIC'].map(dictionary)
-data = data.dropna(subset = ['LOC_X','LOC_Y','SHOT_ZONE_BASIC'])
-data['SHOT_ZONE_BASIC'] = data['SHOT_ZONE_BASIC'].astype(int)
-data = data.drop_duplicates(subset=['GAME_EVENT_ID','GAME_ID'], inplace=False)
-# data[['LOC_RHO','LOC_PHI']] = data[['LOC_X','LOC_Y']].apply(cart2pol, axis=1)
+def label(file_name):
+    ###########################################
+    # Load data and map location categories
+    ###########################################
+    dictionary_1 = {'Right Side(R)':1, 'Left Side(L)':2, 'Center(C)':3, 'Right Side Center(RC)':4, 'Left Side Center(LC)':5}
+    dictionary_2 = {'Less Than 8 ft.':1, '8-16 ft.':2, '16-24 ft.':3, '24+ ft.':4}
+    dictionary_3 = {'Restricted Area':1, 'In The Paint (Non-RA)':2, 'Mid-Range':3, 'Right Corner 3':4, 'Left Corner 3':5, 'Above the Break 3':6}
 
-events = data['GAME_EVENT_ID'].values
+    data = pd.read_csv('./data/train/data.csv')
+    data['shot_zone_area'] = data['shot_zone_area'].map(dictionary_1)
+    data['shot_zone_range'] = data['shot_zone_range'].map(dictionary_2)
+    data['SHOT_ZONE_BASIC'] = data['SHOT_ZONE_BASIC'].map(dictionary_3)
 
-# X = data[['LOC_X','LOC_Y','LOC_RHO','LOC_PHI','GAME_EVENT_ID']]
-X = data[['LOC_X','LOC_Y']]
-# X = data[['LOC_RHO','LOC_PHI']]
+    data = data.dropna(subset = ['LOC_X','LOC_Y','shot_zone_area', 'shot_zone_range'])
 
-# print X.head(5)
+    data['SHOT_ZONE_BASIC'] = data['SHOT_ZONE_BASIC'].astype(int)
+    data['shot_zone_range'] = data['shot_zone_range'].astype(int)
+    data['shot_zone_area'] = data['shot_zone_area'].astype(int)
 
-Y = data[['SHOT_ZONE_BASIC']]
-train_x, test_x, train_y, test_y = train_test_split(X, Y, test_size=0.5, random_state=0123)
+    ###################################################
+    # Combine areas and ranges
+    ###################################################
+    data.loc[(data.shot_zone_area == 1) & (data.shot_zone_range == 1),'shot_zone_range_area'] = 1
+    data.loc[(data.shot_zone_area == 1) & (data.shot_zone_range == 2),'shot_zone_range_area'] = 2
+    data.loc[(data.shot_zone_area == 1) & (data.shot_zone_range == 3),'shot_zone_range_area'] = 3
+    data.loc[(data.shot_zone_area == 1) & (data.shot_zone_range == 4),'shot_zone_range_area'] = 4
 
-####################################################################################
-# Train, Predict, Evaluate TODO: Serialize the classifier so code is more efficient
-####################################################################################
-knn = KNeighborsClassifier(n_neighbors=5)
-knn.fit(train_x, train_y)
-predictions = knn.predict(test_x)
+    data.loc[(data.shot_zone_area == 2) & (data.shot_zone_range == 1),'shot_zone_range_area'] = 5
+    data.loc[(data.shot_zone_area == 2) & (data.shot_zone_range == 2),'shot_zone_range_area'] = 6
+    data.loc[(data.shot_zone_area == 2) & (data.shot_zone_range == 3),'shot_zone_range_area'] = 7
+    data.loc[(data.shot_zone_area == 2) & (data.shot_zone_range == 4),'shot_zone_range_area'] = 8
 
-# KNN is 99.56% accurate
-# print str(classification_report(test_y, predictions, digits=4))
+    data.loc[(data.shot_zone_area == 3) & (data.shot_zone_range == 1),'shot_zone_range_area'] = 9
+    data.loc[(data.shot_zone_area == 3) & (data.shot_zone_range == 2),'shot_zone_range_area'] = 10
+    data.loc[(data.shot_zone_area == 3) & (data.shot_zone_range == 3),'shot_zone_range_area'] = 11
+    data.loc[(data.shot_zone_area == 3) & (data.shot_zone_range == 4),'shot_zone_range_area'] = 12
 
-######################################################################
-# Use KNN Model to label full converted movement set
-######################################################################
-# read data and rename columns
-data = pd.read_csv('./data/converted/0021500139.csv')
-data[['LOC_X','LOC_Y']] = data[['x_loc','y_loc']]
+    data.loc[(data.shot_zone_area == 4) & (data.shot_zone_range == 1),'shot_zone_range_area'] = 13
+    data.loc[(data.shot_zone_area == 4) & (data.shot_zone_range == 2),'shot_zone_range_area'] = 14
+    data.loc[(data.shot_zone_area == 4) & (data.shot_zone_range == 3),'shot_zone_range_area'] = 15
+    data.loc[(data.shot_zone_area == 4) & (data.shot_zone_range == 4),'shot_zone_range_area'] = 16
 
-# predict and label shot zones
-X = data[['LOC_X','LOC_Y']]
-zones = knn.predict(X)
-data['SHOT_ZONE_BASIC'] = zones
-plot_shot(data)
+    data.loc[(data.shot_zone_area == 5) & (data.shot_zone_range == 1),'shot_zone_range_area'] = 17
+    data.loc[(data.shot_zone_area == 5) & (data.shot_zone_range == 2),'shot_zone_range_area'] = 18
+    data.loc[(data.shot_zone_area == 5) & (data.shot_zone_range == 3),'shot_zone_range_area'] = 19
+    data.loc[(data.shot_zone_area == 5) & (data.shot_zone_range == 4),'shot_zone_range_area'] = 20
 
-# map real labels
-data['zone_basic'] = data['SHOT_ZONE_BASIC']
-dictionary = {1:'Restricted Area', 2:'In The Paint (Non-RA)', 3:'Mid-Range', 4:'Right Corner 3', 5:'Left Corner 3', 6:'Above the Break 3'}
-data['zone_basic'] = data['zone_basic'].map(dictionary)
+    # plot_shot(data)
 
-# get rid of excess data
-data = data.drop('LOC_X', axis=1, inplace=False)
-data = data.drop('LOC_Y', axis=1, inplace=False)
-data = data.drop('SHOT_ZONE_BASIC', axis=1, inplace=False)
+    data = data.drop_duplicates(subset=['GAME_EVENT_ID','GAME_ID'], inplace=False)
+    # data[['LOC_RHO','LOC_PHI']] = data[['LOC_X','LOC_Y']].apply(cart2pol, axis=1)
 
-# write to labelled folder
-data.to_csv('./data/label/0021500139.csv', index=False)
+    X = data[['LOC_X','LOC_Y']]
+    Y = data[['shot_zone_range_area']]
+    train_x, test_x, train_y, test_y = train_test_split(X, Y, test_size=0.2, random_state=0123)
+
+    ####################################################################################
+    # Train, Predict, Evaluate TODO: Serialize the classifier so code is more efficient
+    ####################################################################################
+    knn = KNeighborsClassifier(n_neighbors=4)
+    knn.fit(train_x, train_y)
+    predictions = knn.predict(test_x)
+
+    # KNN is 99.56% accurate with single range, 99.07% accurate with two ranges
+    print str(classification_report(test_y, predictions, digits=4))
+
+    ######################################################################
+    # Use KNN Model to label full converted movement set
+    ######################################################################
+    # read data and rename columns
+    data = pd.read_csv('./data/converted/'+file_name)
+    data[['LOC_X','LOC_Y']] = data[['x_loc','y_loc']]
+
+    # predict and label shot zones
+    X = data[['LOC_X','LOC_Y']]
+    zones = knn.predict(X)
+    data['shot_zone_range_area'] = zones
+    plot_shot(data)
+
+    # map real labels
+    # data['range_area_basic'] = data['shot_zone_range_area']
+    #
+    # dictionary_1 = {1:'Right Side(R)', 2:'Left Side(L)', 3:'Center(C)', 4:'Right Side Center(RC)', 5:'Left Side Center(LC)'}
+    # dictionary_2 = {1:'Less Than 8 ft.', 2:'8-16 ft.', 3:'16-24 ft.', 4:'24+ ft.'}
+    # dictionary_3 = {1:'Restricted Area', 2:'In The Paint (Non-RA)', 3:'Mid-Range', 4:'Right Corner 3', 5:'Left Corner 3', 6:'Above the Break 3'}
+    #
+    # data['range_basic'] = data['range_basic'].map(dictionary_2)
+    #
+    # # get rid of excess data
+    # data = data.drop('LOC_X', axis=1, inplace=False)
+    # data = data.drop('LOC_Y', axis=1, inplace=False)
+    # data = data.drop('shot_zone_range', axis=1, inplace=False)
+    #
+    # # write to labelled folder
+    # data.to_csv('./data/label/'+file_name, index=False)
+
+label('0021500139.csv')
